@@ -8,28 +8,28 @@ $scriptDir = $PSScriptRoot
 $prompt = @"
 This is an automated task. Proceed without asking for confirmation.
 
-Task: Extract the latest ChatGPT invoice link from Stripe billing portal.
+Goal: Capture the current Stripe billing portal URL for the latest ChatGPT invoice.
 
 Steps:
-1. Go to https://chatgpt.com/#settings/Account
+1. Open https://chatgpt.com/#settings/Account
 2. In the Payment area, click "Manage" to open pay.openai.com
-3. Scroll to "INVOICE HISTORY" section
-4. Find the latest invoice row. IMPORTANT: Do NOT click anything. Right-click the invoice link and select "Copy link address" to get the URL.
-5. Output the date and URL in the format below
+3. Copy the current pay.openai.com URL (the invoice page you are on)
+4. Save it to a text file named YYYYMMDD-pay-link.txt where YYYYMMDD is today's date
+5. Respond with the format below
 
 Output format - respond with ONLY these two lines:
 DATE: YYYYMMDD
 URL: <the full invoice URL>
 
-6. FINALLY: Press Ctrl+W to close the current tab. This step is REQUIRED.
+6. Close the current tab with Ctrl+W. This step is REQUIRED.
 
-Execute all steps including closing tabs. Do not skip any steps.
+Execute all steps. Do not skip any steps.
 "@
 
 Write-Host "=== ChatGPT Invoice Downloader ===" -ForegroundColor Cyan
 Write-Host ""
 Write-Host "Step 1: Extracting invoice link with Claude..." -ForegroundColor Yellow
-$claudeOutput = claude -p $prompt --chrome --dangerously-skip-permissions 2>&1
+$claudeOutput = claude -p $prompt --model sonnet --chrome --dangerously-skip-permissions 2>&1
 
 if ($LASTEXITCODE -ne 0) {
     Write-Host "Error: Claude failed to extract invoice link" -ForegroundColor Red
@@ -39,11 +39,11 @@ if ($LASTEXITCODE -ne 0) {
 
 # Parse the output to extract date and URL
 $dateMatch = [regex]::Match($claudeOutput, 'DATE:\s*(\d{8})')
-$urlMatch = [regex]::Match($claudeOutput, 'URL:\s*(https://[^\s]+)')
+$urlMatch = [regex]::Match($claudeOutput, 'URL:\s*(https://pay\.openai\.com/[^\s]+)')
 
-# Fallback: try to find any Stripe invoice URL in output
+# Fallback: try to find any pay.openai.com URL in output
 if (-not $urlMatch.Success) {
-    $urlMatch = [regex]::Match($claudeOutput, '(https://invoice\.stripe\.com/[^\s\)]+)')
+    $urlMatch = [regex]::Match($claudeOutput, '(https://pay\.openai\.com/[^\s\)]+)')
 }
 
 if (-not $urlMatch.Success) {
@@ -56,24 +56,35 @@ if (-not $urlMatch.Success) {
 $invoiceUrl = $urlMatch.Groups[1].Value
 $invoiceDate = if ($dateMatch.Success) { $dateMatch.Groups[1].Value } else { (Get-Date).ToString("yyyyMMdd") }
 
-# Save to file (without BOM to avoid URL parsing issues)
-$linkFile = Join-Path $downloadPath "$invoiceDate-stripe-link.txt"
+# Save to temp file (without BOM to avoid URL parsing issues)
+$linkFile = Join-Path $downloadPath "$invoiceDate-pay-link.txt"
 [System.IO.File]::WriteAllText($linkFile, $invoiceUrl)
-Write-Host "Saved invoice link to: $linkFile" -ForegroundColor Green
+Write-Host "Saved pay.openai.com link to: $linkFile" -ForegroundColor Green
 
 Write-Host ""
-Write-Host "Step 2: Downloading invoice PDF..." -ForegroundColor Yellow
-python "$scriptDir\download-stripe-from-url.py" --latest
+Write-Host "Step 2: Extracting Stripe invoice link..." -ForegroundColor Yellow
+$stripeUrl = python "$scriptDir\extract-stripe-link.py" --latest
+
+if ($LASTEXITCODE -ne 0) {
+    Write-Host "Error: Failed to extract Stripe invoice link" -ForegroundColor Red
+    exit 1
+}
+
+Write-Host "Stripe URL: $stripeUrl" -ForegroundColor Gray
+
+Write-Host ""
+Write-Host "Step 3: Downloading invoice PDF..." -ForegroundColor Yellow
+python "$scriptDir\download-stripe-from-url.py" $stripeUrl
 
 if ($LASTEXITCODE -ne 0) {
     Write-Host "Error: Failed to download invoice PDF" -ForegroundColor Red
     exit 1
 }
 
-# Step 3: Clean up - delete the link file
+# Step 4: Clean up - delete the temp link file
 Write-Host ""
-Write-Host "Step 3: Cleaning up temporary files..." -ForegroundColor Yellow
-$linkFiles = Get-ChildItem -Path $downloadPath -Filter "*-stripe-link.txt" | Sort-Object LastWriteTime -Descending
+Write-Host "Step 4: Cleaning up temporary files..." -ForegroundColor Yellow
+$linkFiles = Get-ChildItem -Path $downloadPath -Filter "*-pay-link.txt" | Sort-Object LastWriteTime -Descending
 if ($linkFiles) {
     $latestLinkFile = $linkFiles[0].FullName
     Remove-Item $latestLinkFile -Force
