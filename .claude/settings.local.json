@@ -9,7 +9,9 @@
       "Bash(git pull:*)",
       "Bash(git push:*)",
       "Skill(ship)",
-      "Bash(cd:*)"
+      "Bash(cd:*)",
+      "Bash(git status:*)",
+      "Bash(ls:*)"
     ]
   }
 }

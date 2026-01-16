@@ -4,6 +4,26 @@
 $downloadPath = "$env:USERPROFILE\Downloads"
 $scriptDir = $PSScriptRoot
 
+# Function to close Chrome windows by title pattern
+function Close-ChromeWindowByTitle {
+    param([string]$TitlePattern)
+
+    Get-Process chrome -ErrorAction SilentlyContinue |
+        Where-Object { $_.MainWindowTitle -like $TitlePattern } |
+        ForEach-Object {
+            $_.CloseMainWindow() | Out-Null
+            Write-Host "Closed window: $($_.MainWindowTitle)" -ForegroundColor Gray
+        }
+}
+
+# Ensure Chrome is running (required for Claude browser extension)
+if (-not (Get-Process chrome -ErrorAction SilentlyContinue)) {
+    Write-Host "Chrome is not running. Starting Chrome..." -ForegroundColor Yellow
+    Start-Process "chrome.exe"
+    Write-Host "Waiting for Chrome and extension to initialize..." -ForegroundColor Gray
+    Start-Sleep -Seconds 5
+}
+
 # Step 1: Use Claude to extract invoice link
 $prompt = @"
 This is an automated task. Proceed without asking for confirmation.
@@ -29,6 +49,7 @@ Execute all steps. Do not skip any steps.
 Write-Host "=== ChatGPT Invoice Downloader ===" -ForegroundColor Cyan
 Write-Host ""
 Write-Host "Step 1: Extracting invoice link with Claude..." -ForegroundColor Yellow
+
 $claudeOutput = claude -p $prompt --model sonnet --chrome --dangerously-skip-permissions 2>&1
 
 if ($LASTEXITCODE -ne 0) {
@@ -90,6 +111,11 @@ if ($linkFiles) {
     Remove-Item $latestLinkFile -Force
     Write-Host "Deleted: $latestLinkFile" -ForegroundColor Gray
 }
+
+# Step 5: Close Chrome windows with OpenAI billing in title
+Write-Host ""
+Write-Host "Step 5: Closing billing portal Chrome windows..." -ForegroundColor Yellow
+Close-ChromeWindowByTitle "*OpenAI OpCo*"
 
 Write-Host ""
 Write-Host "Done! Invoice downloaded successfully." -ForegroundColor Green
