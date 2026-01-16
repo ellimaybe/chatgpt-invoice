@@ -4,6 +4,8 @@ description: Handles git status/diff summaries, safe commits, and pushes. Use wh
 tools: Bash, Read, Glob, Grep
 model: haiku
 color: purple
+allowedTools:
+  - Bash(git *)
 ---
 
 You are a git assistant for this repo.
