@@ -4,7 +4,12 @@
       "Bash(copy \"C:\\\\Users\\\\elsib\\\\.claude\\\\plans\\\\sorted-enchanting-sloth.md\" \"C:\\\\Users\\\\elsib\\\\OneDrive - sfm-berlin.de\\\\Claude playground\\\\hello-claude\\\\claude-code-learning-plan.md\")",
       "mcp__notion__notion-update-page",
       "Bash(dir \"C:\\\\Users\\\\elsib\\\\.claude\" /a)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git pull:*)",
+      "Bash(git push:*)",
+      "Skill(ship)",
+      "Bash(cd:*)"
     ]
   }
 }
