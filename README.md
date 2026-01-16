@@ -16,4 +16,4 @@ Run:
 
 Notes:
 - The script uses Claude Code with Chrome to extract the invoice link
-- Downloads are saved to the default output path in download-stripe-from-url.py
+- Downloads are saved to the default output path in src\download-stripe-from-url.py

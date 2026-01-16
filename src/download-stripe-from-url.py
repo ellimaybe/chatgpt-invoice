@@ -115,16 +115,14 @@ def download_invoice(invoice_url, download_path="./"):
         finally:
             browser.close()
 
-DEFAULT_DOWNLOAD_PATH = Path.home() / "Downloads"
-# TODO: Switch to SFM SharePoint path when ready; user name differs per PC.
-# DEFAULT_DOWNLOAD_PATH = (
-#     Path.home()
-#     / "sfm-berlin.de"
-#     / "SFM shared - Documents"
-#     / "Accounting"
-#     / "Elena - receipts"
-#     / str(datetime.now().year)
-# )
+DEFAULT_DOWNLOAD_PATH = (
+    Path.home()
+    / "sfm-berlin.de"
+    / "SFM shared - Documents"
+    / "Accounting"
+    / f"{os.environ.get('SFM_RECEIPTS_USER', getpass.getuser())} - receipts"
+    / str(datetime.now().year)
+)
 DEFAULT_LINK_DIR = Path.home() / "Downloads"
 
 def find_latest_link_file(directory):
@@ -146,10 +144,10 @@ if __name__ == "__main__":
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  python download-stripe-from-url.py "https://invoice.stripe.com/..."
-  python download-stripe-from-url.py --file 20251225-stripe-link.txt
-  python download-stripe-from-url.py --latest
-  python download-stripe-from-url.py "https://..." --output ./my-invoices
+  python src\\download-stripe-from-url.py "https://invoice.stripe.com/..."
+  python src\\download-stripe-from-url.py --file 20251225-stripe-link.txt
+  python src\\download-stripe-from-url.py --latest
+  python src\\download-stripe-from-url.py "https://..." --output ./my-invoices
         """
     )
     parser.add_argument('url', nargs='?', help='Stripe invoice URL')

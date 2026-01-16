@@ -2,7 +2,7 @@
 # Creates a Windows scheduled task to download ChatGPT invoices monthly
 
 $taskName = "ChatGPT Invoice Downloader"
-$scriptPath = "$PSScriptRoot\download-chatgpt-invoice.ps1"
+$scriptPath = "$PSScriptRoot\src\download-chatgpt-invoice.ps1"
 
 # Check if task already exists
 $existingTask = Get-ScheduledTask -TaskName $taskName -ErrorAction SilentlyContinue
